@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>THEOS Tracker - GISTDA Sphere Map</title>
+  <title>THEOS Tracker - Bing Maps</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.109/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.109/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
   <script src="https://unpkg.com/satellite.js@5.0.1/dist/satellite.min.js"></script>
@@ -32,26 +33,16 @@
   </div>
   <div id="cesiumContainer"></div>
   <script>
-    // กำหนดค่า imageryProvider สำหรับ GISTDA Sphere WMTS
-    const imageryProvider = new Cesium.WebMapTileServiceImageryProvider({
-      url: "https://basemap.sphere.gistda.or.th/service",
-      layer: "GISTDA_Imagery", // ชื่อเลเยอร์ที่ต้องการใช้
-      style: "",
-      format: "image/png",
-      tileMatrixSetID: "EPSG:3857",
-      maximumLevel: 18
-    });
-
-    // สร้าง Viewer พร้อม imageryProvider จาก GISTDA Sphere
     const viewer = new Cesium.Viewer("cesiumContainer", {
-      imageryProvider: imageryProvider,
+      imageryProvider: new Cesium.UrlTemplateImageryProvider({
+        url : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+      }),
       baseLayerPicker: false,
       geocoder: false,
       timeline: false,
-      shouldAnimate: true,
+      shouldAnimate: true
     });
 
-    // ข้อมูล TLE ของดาวเทียม THEOS และ THEOS-2
     const tleData = {
       "THEOS": [
         "1 33396U 08049A   25083.87213906  .00000283  00000+0  15311-3 0  9995",
@@ -63,7 +54,6 @@
       ]
     };
 
-    // ฟังก์ชันคำนวณตำแหน่งดาวเทียมตาม TLE
     function propagateSatellite(tle, date) {
       const satrec = satellite.twoline2satrec(tle[0], tle[1]);
       const positions = [];
@@ -81,7 +71,6 @@
       return positions;
     }
 
-    // ฟังก์ชันวาดวงโคจรของดาวเทียม
     function plotSatellites(date) {
       viewer.entities.removeAll();
       for (const [name, tle] of Object.entries(tleData)) {
@@ -102,14 +91,12 @@
       }
     }
 
-    // การตั้งค่า Date Picker
     const picker = document.getElementById("datePicker");
     picker.valueAsDate = new Date();
     picker.addEventListener("change", () => {
       plotSatellites(new Date(picker.value));
     });
 
-    // วาดวงโคจรครั้งแรก
     plotSatellites(new Date());
   </script>
 </body>
