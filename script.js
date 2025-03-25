@@ -1,4 +1,6 @@
 
+Cesium.Ion.defaultAccessToken = "1b7a70db0c8e4df4a6b4b6ef9ff1e9d1";
+
 const viewer = new Cesium.Viewer("cesiumContainer", {
   shouldAnimate: true,
   timeline: false,
