@@ -1,15 +1,12 @@
-
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>THEOS Tracker - Leaflet</title>
+  <title>THEOS Tracker - Leaflet Enhanced</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-o9N1j7k5G8zX1TLkaHLE5hcGqhLHF7S+nlu2Q0Cq6tI="
-    crossorigin=""
   />
   <style>
     html, body, #map {
@@ -31,18 +28,31 @@
 <div class="toolbar">
   <label>เลือกวันที่: </label>
   <input type="date" id="datePicker" />
+  <br/><br/>
+  <label><input type="checkbox" id="theos1" checked> แสดง THEOS</label><br/>
+  <label><input type="checkbox" id="theos2" checked> แสดง THEOS-2</label><br/><br/>
+  <label>แผนที่พื้นหลัง:</label>
+  <select id="basemap">
+    <option value="osm">OSM (แผนที่ถนน)</option>
+    <option value="sat">Satellite</option>
+  </select>
 </div>
 <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-o9N1j7k5G8zX1TLkaHLE5hcGqhLHF7S+nlu2Q0Cq6tI="
-  crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="satellite.min.js"></script>
 <script>
   const map = L.map('map').setView([0, 0], 2);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+  });
+
+  const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri'
+  });
+
+  osmLayer.addTo(map);
 
   const tleData = {
     "THEOS": [
@@ -55,46 +65,68 @@
     ]
   };
 
-  function propagateTrack(tle, date) {
+  let layers = [];
+
+  function propagateSingleOrbit(tle, date, orbitMinutes = 100) {
     const satrec = satellite.twoline2satrec(tle[0], tle[1]);
     const latlngs = [];
 
-    for (let i = 0; i < 1440; i += 10) {
+    for (let i = 0; i <= orbitMinutes; i += 2) {
       const time = new Date(date.getTime() + i * 60000);
       const positionAndVelocity = satellite.propagate(satrec, time);
       if (!positionAndVelocity.position) continue;
-
       const gmst = satellite.gstime(time);
-      const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-      const lat = satellite.degreesLat(positionGd.latitude);
-      const lon = satellite.degreesLong(positionGd.longitude);
+      const posGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+      const lat = satellite.degreesLat(posGd.latitude);
+      const lon = satellite.degreesLong(posGd.longitude);
       latlngs.push([lat, lon]);
     }
-
     return latlngs;
   }
 
-  let tracks = [];
+  function clearLayers() {
+    layers.forEach(l => map.removeLayer(l));
+    layers = [];
+  }
 
-  function plot(date) {
-    tracks.forEach(layer => map.removeLayer(layer));
-    tracks = [];
+  function plotSatellites(date) {
+    clearLayers();
+    const showTheos = document.getElementById("theos1").checked;
+    const showTheos2 = document.getElementById("theos2").checked;
 
-    for (const [name, tle] of Object.entries(tleData)) {
-      const latlngs = propagateTrack(tle, date);
-      const polyline = L.polyline(latlngs, { color: 'yellow' }).addTo(map);
-      const marker = L.marker(latlngs[0]).addTo(map).bindPopup(name);
-      tracks.push(polyline, marker);
+    if (showTheos) {
+      const coords = propagateSingleOrbit(tleData["THEOS"], date);
+      const poly = L.polyline(coords, { color: 'yellow', weight: 3 }).addTo(map);
+      const marker = L.circleMarker(coords[0], { radius: 6, color: 'yellow', fillColor: 'yellow', fillOpacity: 1 }).bindPopup("THEOS").addTo(map);
+      layers.push(poly, marker);
+    }
+
+    if (showTheos2) {
+      const coords2 = propagateSingleOrbit(tleData["THEOS-2"], date);
+      const poly2 = L.polyline(coords2, { color: 'red', weight: 3 }).addTo(map);
+      const marker2 = L.circleMarker(coords2[0], { radius: 6, color: 'red', fillColor: 'red', fillOpacity: 1 }).bindPopup("THEOS-2").addTo(map);
+      layers.push(poly2, marker2);
     }
   }
 
-  const picker = document.getElementById('datePicker');
+  const picker = document.getElementById("datePicker");
   picker.valueAsDate = new Date();
-  picker.addEventListener('change', () => {
-    plot(new Date(picker.value));
+  picker.addEventListener("change", () => plotSatellites(new Date(picker.value)));
+
+  document.getElementById("theos1").addEventListener("change", () => plotSatellites(new Date(picker.value)));
+  document.getElementById("theos2").addEventListener("change", () => plotSatellites(new Date(picker.value)));
+
+  document.getElementById("basemap").addEventListener("change", (e) => {
+    map.eachLayer(l => map.removeLayer(l));
+    if (e.target.value === "sat") {
+      satLayer.addTo(map);
+    } else {
+      osmLayer.addTo(map);
+    }
+    plotSatellites(new Date(picker.value));
   });
 
-  plot(new Date());
+  plotSatellites(new Date());
 </script>
 </body>
 </html>
