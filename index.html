@@ -1,13 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>THEOS Tracker with Auto TLE Update</title>
+  <title>THEOS Tracker - Final Stable</title>
   <script src="satellite.min.js"></script>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.100/Build/CesiumUnminified/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.100/Build/CesiumUnminified/Widgets/widgets.css" rel="stylesheet" />
   <style>
-    /* สไตล์พื้นฐานสำหรับหน้าเว็บ */
     html, body, #cesiumContainer {
       width: 100%;
       height: 100%;
@@ -15,103 +15,42 @@
       padding: 0;
       overflow: hidden;
     }
-    /* สไตล์สำหรับแถบเครื่องมือ */
     .toolbar {
+  left: 15px;
+  top: 15px;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
       position: absolute;
-      top: 15px;
-      left: 15px;
-      background: rgba(255, 255, 255, 0.9);
-      padding: 15px;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 10px;
       z-index: 999;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      width: 250px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    /* สไตล์สำหรับป้ายกำกับ */
-    .toolbar label {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    /* สไตล์สำหรับช่องป้อนข้อมูลวันที่และเวลา */
-    .toolbar input[type="date"],
-    .toolbar input[type="time"] {
-      width: 120px;
-    }
-    /* สไตล์สำหรับกลุ่ม checkbox */
-    .toolbar .checkbox-group {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      margin: 5px 0;
-    }
-    /* สไตล์สำหรับกลุ่มเวลา */
-    .toolbar .time-group {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      margin-top: 5px;
-    }
-    /* สไตล์สำหรับสถานะการอัปเดต */
-    .update-status {
-      font-size: 12px;
-      color: #666;
-      text-align: center;
-      margin-top: 10px;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
-  <!-- แถบเครื่องมือหลัก -->
   <div class="toolbar">
-    <!-- ส่วนเลือกวันที่ -->
-    <label>
-      <span>เลือกวันที่:</span>
-      <input type="date" id="datePicker" />
-    </label>
     
-    <!-- ส่วนเลือกดาวเทียมที่จะแสดง -->
-    <div class="checkbox-group">
-      <label>
-        <input type="checkbox" id="showTheos1" checked />
-        <span>THEOS</span>
-      </label>
-      <label>
-        <input type="checkbox" id="showTheos2" checked />
-        <span>THEOS-2</span>
-      </label>
-    </div>
-    
-    <!-- ส่วนเลือกช่วงเวลา -->
-    <div class="time-group">
-      <label>
-        <span>เวลาเริ่มต้น:</span>
-        <input type="time" id="startTime" value="00:00" />
-      </label>
-      <label>
-        <span>เวลาสิ้นสุด:</span>
-        <input type="time" id="endTime" value="23:59" />
-      </label>
-    </div>
-    
-    <!-- แสดงสถานะการอัปเดต TLE -->
-    <div class="update-status" id="updateStatus">
-      กำลังโหลดข้อมูล TLE...
-    </div>
+    <input type="date" id="datePicker" />
   </div>
-  
-  <!-- Container สำหรับแสดงแผนที่ Cesium -->
   <div id="cesiumContainer"></div>
+<div class="toolbar" style="position:absolute;top:15px;left:15px;width:220px;background:rgba(255,255,255,0.95);padding:10px;border-radius:6px;z-index:999;display:flex;flex-direction:column;gap:5px;">
+  <label>เลือกวันที่: <input type="date" id="datePicker" /></label><br/>
+  <label><input type="checkbox" id="showTheos1" checked /> แสดง THEOS</label><br/>
+  <label><input type="checkbox" id="showTheos2" checked /> แสดง THEOS-2</label><br/>
+  <label>เวลาเริ่มต้น: <input type="time" id="startTime" value="00:00" /></label><br/>
+  <label>เวลาสิ้นสุด: <input type="time" id="endTime" value="23:59" /></label><br/>
+</div>
 
   <script>
-    // ตั้งค่า Cesium Viewer
     Cesium.Ion.defaultAccessToken = "PASTE_YOUR_TOKEN_HERE";
-    const viewer = new Cesium.Viewer("cesiumContainer", {
+const viewer = new Cesium.Viewer("cesiumContainer", {
       imageryProvider: new Cesium.UrlTemplateImageryProvider({
-        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+        url : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
       }),
       baseLayerPicker: false,
       geocoder: false,
@@ -119,8 +58,7 @@
       shouldAnimate: true
     });
 
-    // ข้อมูล TLE ของดาวเทียม (ค่าเริ่มต้น)
-    let tleData = {
+    const tleData = {
       "THEOS": [
         "1 33396U 08049A   25083.87213906  .00000283  00000+0  15311-3 0  9995",
         "2 33396  98.6176 149.1908 0001332  96.9286 263.2042 14.20082670854190"
@@ -131,214 +69,114 @@
       ]
     };
 
-    // URL สำหรับดึงข้อมูล TLE ล่าสุด
-    const TLE_SOURCES = {
-      "THEOS": "https://celestrak.org/NORAD/elements/gp.php?CATNR=33396&FORMAT=tle",
-      "THEOS-2": "https://celestrak.org/NORAD/elements/gp.php?CATNR=58016&FORMAT=tle"
-    };
-
-    // ฟังก์ชันสำหรับดึงข้อมูล TLE จากแหล่งข้อมูล
-    async function fetchTLE(satelliteName) {
-      try {
-        const response = await fetch(TLE_SOURCES[satelliteName]);
-        if (!response.ok) throw new Error("Network response was not ok");
-        
-        const text = await response.text();
-        const lines = text.trim().split('\n');
-        
-        if (lines.length >= 2) {
-          return [lines[0], lines[1]]; // ส่งคืน TLE 2 บรรทัดแรก
-        }
-        throw new Error("Invalid TLE format");
-      } catch (error) {
-        console.error(`Error fetching TLE for ${satelliteName}:`, error);
-        return null; // หากเกิดข้อผิดพลาดจะส่งคืน null
-      }
-    }
-
-    // ฟังก์ชันอัปเดตข้อมูล TLE ทั้งหมด
-    async function updateAllTLEs() {
-      const statusElement = document.getElementById("updateStatus");
-      statusElement.textContent = "กำลังอัปเดตข้อมูล TLE...";
-      
-      try {
-        // ดึงข้อมูล TLE สำหรับดาวเทียมทั้งสองดวง
-        const [theosTLE, theos2TLE] = await Promise.all([
-          fetchTLE("THEOS"),
-          fetchTLE("THEOS-2")
-        ]);
-        
-        // อัปเดตข้อมูลหากดึงข้อมูลสำเร็จ
-        if (theosTLE) tleData["THEOS"] = theosTLE;
-        if (theos2TLE) tleData["THEOS-2"] = theos2TLE;
-        
-        // แสดงสถานะและเวลาที่อัปเดต
-        const now = new Date();
-        const options = { 
-          timeZone: 'Asia/Bangkok',
-          hour12: false,
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        };
-        const timeString = now.toLocaleString('th-TH', options);
-        statusElement.textContent = `อัปเดตล่าสุด: ${timeString}`;
-        
-        // วาดวงโคจรใหม่ด้วยข้อมูล TLE ที่อัปเดต
-        drawOrbits();
-      } catch (error) {
-        console.error("Error updating TLEs:", error);
-        statusElement.textContent = "การอัปเดต TLE ล้มเหลว";
-      }
-    }
-
-    // ตั้งเวลาอัปเดต TLE ทุกวันเวลา 03:00 น. (เวลาไทย)
-    function scheduleDailyTLEUpdate() {
-      const now = new Date();
-      const bangkokOffset = 7 * 60 * 60 * 1000; // UTC+7 (เวลาประเทศไทย)
-      const nowBangkok = new Date(now.getTime() + bangkokOffset);
-      
-      // คำนวณเวลาถัดไปที่จะอัปเดต (03:00 น. วันนี้หรือพรุ่งนี้)
-      let nextUpdate = new Date(nowBangkok);
-      nextUpdate.setHours(3, 0, 0, 0);
-      
-      if (nowBangkok >= nextUpdate) {
-        nextUpdate.setDate(nextUpdate.getDate() + 1); // อัปเดตพรุ่งนี้ถ้าวันนี้ผ่านไปแล้ว
-      }
-      
-      // คำนวณระยะเวลาที่เหลือจนถึงเวลาอัปเดต
-      const timeUntilUpdate = nextUpdate - nowBangkok;
-      
-      // ตั้งเวลาอัปเดตครั้งแรก
-      setTimeout(() => {
-        updateAllTLEs();
-        // ตั้งเวลาให้อัปเดตทุก 24 ชั่วโมงหลังจากนี้
-        setInterval(updateAllTLEs, 24 * 60 * 60 * 1000);
-      }, timeUntilUpdate);
-      
-      console.log(`TLE จะถูกอัปเดตในอีก ${Math.round(timeUntilUpdate/1000/60)} นาที`);
-    }
-
-    // แปลงเวลาเป็นนาที
-    function getMinutes(timeString) {
-      const [hours, minutes] = timeString.split(':').map(Number);
-      return hours * 60 + minutes;
-    }
-
-    // คำนวณตำแหน่งดาวเทียม
-    function calculateSatellitePositions(tle, date, startMin, endMin, step = 2) {
+    function propagateSatellite(tle, date) {
       const satrec = satellite.twoline2satrec(tle[0], tle[1]);
       const positions = [];
-      
-      for (let i = startMin; i <= endMin; i += step) {
+      for (let i = 0; i < 1440; i += 10) {
         const time = new Date(date.getTime() + i * 60000);
         const posVel = satellite.propagate(satrec, time);
-        
-        if (posVel.position) {
-          const gmst = satellite.gstime(time);
-          const geo = satellite.eciToGeodetic(posVel.position, gmst);
-          const lat = Cesium.Math.toDegrees(geo.latitude);
-          const lon = Cesium.Math.toDegrees(geo.longitude);
-          const alt = geo.height * 1000;
-          positions.push(Cesium.Cartesian3.fromDegrees(lon, lat, alt));
-        }
+        if (!posVel.position) continue;
+        const gmst = satellite.gstime(time);
+        const geo = satellite.eciToGeodetic(posVel.position, gmst);
+        const lat = Cesium.Math.toDegrees(geo.latitude);
+        const lon = Cesium.Math.toDegrees(geo.longitude);
+        const height = geo.height * 1000;
+        positions.push(Cesium.Cartesian3.fromDegrees(lon, lat, height));
       }
-      
       return positions;
     }
 
-    // วาดวงโคจรดาวเทียม
-    function drawOrbits() {
+    function plotSatellites(date) {
       viewer.entities.removeAll();
-      
-      const showTheos1 = document.getElementById("showTheos1").checked;
-      const showTheos2 = document.getElementById("showTheos2").checked;
-      const startTime = getMinutes(document.getElementById("startTime").value);
-      const endTime = getMinutes(document.getElementById("endTime").value);
-      const selectedDate = new Date(document.getElementById("datePicker").value);
-      
-      if (showTheos1) {
-        const positions = calculateSatellitePositions(
-          tleData["THEOS"], 
-          selectedDate, 
-          startTime, 
-          endTime
-        );
-        
-        if (positions.length > 0) {
-          viewer.entities.add({
-            name: "THEOS",
-            polyline: {
-              positions: positions,
-              width: 2,
-              material: Cesium.Color.YELLOW
-            }
-          });
-          viewer.entities.add({
-            position: positions[0],
-            point: { pixelSize: 10, color: Cesium.Color.YELLOW },
-            label: {
-              text: "THEOS",
-              font: "14px sans-serif",
-              fillColor: Cesium.Color.YELLOW
-            }
-          });
-        }
-      }
-      
-      if (showTheos2) {
-        const positions = calculateSatellitePositions(
-          tleData["THEOS-2"], 
-          selectedDate, 
-          startTime, 
-          endTime
-        );
-        
-        if (positions.length > 0) {
-          viewer.entities.add({
-            name: "THEOS-2",
-            polyline: {
-              positions: positions,
-              width: 2,
-              material: Cesium.Color.RED
-            }
-          });
-          viewer.entities.add({
-            position: positions[0],
-            point: { pixelSize: 10, color: Cesium.Color.RED },
-            label: {
-              text: "THEOS-2",
-              font: "14px sans-serif",
-              fillColor: Cesium.Color.RED
-            }
-          });
-        }
+      for (const [name, tle] of Object.entries(tleData)) {
+        const track = propagateSatellite(tle, date);
+        viewer.entities.add({
+          name,
+          polyline: {
+            positions: track,
+            width: 2,
+            material: Cesium.Color.YELLOW,
+          },
+          label: {
+            text: name,
+            font: "14px sans-serif",
+            fillColor: Cesium.Color.WHITE,
+          }
+        });
       }
     }
 
-    // ตั้งค่าเริ่มต้นและ event listeners
-    function initialize() {
-      document.getElementById("datePicker").valueAsDate = new Date();
-      
-      const controls = ["showTheos1", "showTheos2", "startTime", "endTime", "datePicker"];
-      controls.forEach(id => {
-        document.getElementById(id).addEventListener("change", drawOrbits);
-      });
-      
-      // อัปเดต TLE ครั้งแรกเมื่อโหลดหน้าเว็บ
-      updateAllTLEs();
-      // ตั้งเวลา  ัปเดต TLE ทุกวันเวลา 03:00 น.
-      scheduleDailyTLEUpdate();
-      
-      // วาดวงโคจรเริ่มต้น
-      drawOrbits();
-    }
+    const picker = document.getElementById("datePicker");
+    picker.valueAsDate = new Date();
+    picker.addEventListener("change", () => {
+      plotSatellites(new Date(picker.value));
+    });
 
-    // เริ่มทำงานเมื่อหน้าเว็บโหลดเสร็จ
-    initialize();
+    plotSatellites(new Date());
   </script>
+
+<script>
+function getMinutes(t) {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function drawOrbits() {
+  viewer.entities.removeAll();
+
+  const show1 = document.getElementById("showTheos1").checked;
+  const show2 = document.getElementById("showTheos2").checked;
+  const start = getMinutes(document.getElementById("startTime").value);
+  const end = getMinutes(document.getElementById("endTime").value);
+  const date = new Date(document.getElementById("datePicker").value);
+
+  const tle = {
+    "THEOS": [
+      "1 33396U 08049A   25083.87213906  .00000283  00000+0  15311-3 0  9995",
+      "2 33396  98.6176 149.1908 0001332  96.9286 263.2042 14.20082670854190"
+    ],
+    "THEOS-2": [
+      "1 58016U 23155A   25083.88629186  .00003640  00000+0  46978-3 0  9991",
+      "2 58016  97.9047 156.2251 0001223  90.4571 269.6781 14.81595690 78893"
+    ]
+  };
+
+  function plot(tle, color, label) {
+    const satrec = satellite.twoline2satrec(tle[0], tle[1]);
+    const positions = [];
+    for (let i = start; i <= end; i += 2) {
+      const time = new Date(date.getTime() + i * 60000);
+      const posVel = satellite.propagate(satrec, time);
+      if (!posVel.position) continue;
+      const gmst = satellite.gstime(time);
+      const geo = satellite.eciToGeodetic(posVel.position, gmst);
+      const lat = Cesium.Math.toDegrees(geo.latitude);
+      const lon = Cesium.Math.toDegrees(geo.longitude);
+      const alt = geo.height * 1000;
+      positions.push(Cesium.Cartesian3.fromDegrees(lon, lat, alt));
+    }
+    if (positions.length > 0) {
+      viewer.entities.add({
+        polyline: { positions, width: 2, material: color }
+      });
+      viewer.entities.add({
+        position: positions[0],
+        point: { pixelSize: 10, color: color },
+        label: { text: label, font: "14px sans-serif", fillColor: color }
+      });
+    }
+  }
+
+  if (show1) plot(tle["THEOS"], Cesium.Color.YELLOW, "THEOS");
+  if (show2) plot(tle["THEOS-2"], Cesium.Color.RED, "THEOS-2");
+}
+
+document.getElementById("datePicker").valueAsDate = new Date();
+["showTheos1", "showTheos2", "startTime", "endTime", "datePicker"].forEach(id => {
+  document.getElementById(id).addEventListener("change", drawOrbits);
+});
+drawOrbits();
+</script>
+
 </body>
 </html>
