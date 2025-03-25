@@ -1,103 +1,100 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>THEOS Tracker - Final Stable</title>
-  <script src="satellite.min.js"></script>
-  <script src="https://cesium.com/downloads/cesiumjs/releases/1.100/Build/CesiumUnminified/Cesium.js"></script>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.100/Build/CesiumUnminified/Widgets/widgets.css" rel="stylesheet" />
+  <meta charset="utf-8" />
+  <title>THEOS Tracker - Leaflet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-o9N1j7k5G8zX1TLkaHLE5hcGqhLHF7S+nlu2Q0Cq6tI="
+    crossorigin=""
+  />
   <style>
-    html, body, #cesiumContainer {
-      width: 100%;
+    html, body, #map {
       height: 100%;
       margin: 0;
-      padding: 0;
-      overflow: hidden;
     }
     .toolbar {
       position: absolute;
       top: 10px;
       left: 10px;
+      z-index: 1000;
       background: white;
       padding: 10px;
-      z-index: 999;
       border-radius: 5px;
     }
   </style>
 </head>
 <body>
-  <div class="toolbar">
-    <label for="datePicker">เลือกวันที่: </label>
-    <input type="date" id="datePicker" />
-  </div>
-  <div id="cesiumContainer"></div>
-  <script>
-    const viewer = new Cesium.Viewer("cesiumContainer", {
-      imageryProvider: new Cesium.UrlTemplateImageryProvider({
-        url : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-      }),
-      baseLayerPicker: false,
-      geocoder: false,
-      timeline: false,
-      shouldAnimate: true
-    });
+<div class="toolbar">
+  <label>เลือกวันที่: </label>
+  <input type="date" id="datePicker" />
+</div>
+<div id="map"></div>
 
-    const tleData = {
-      "THEOS": [
-        "1 33396U 08049A   25083.87213906  .00000283  00000+0  15311-3 0  9995",
-        "2 33396  98.6176 149.1908 0001332  96.9286 263.2042 14.20082670854190"
-      ],
-      "THEOS-2": [
-        "1 58016U 23155A   25083.88629186  .00003640  00000+0  46978-3 0  9991",
-        "2 58016  97.9047 156.2251 0001223  90.4571 269.6781 14.81595690 78893"
-      ]
-    };
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-o9N1j7k5G8zX1TLkaHLE5hcGqhLHF7S+nlu2Q0Cq6tI="
+  crossorigin=""></script>
+<script src="satellite.min.js"></script>
+<script>
+  const map = L.map('map').setView([0, 0], 2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-    function propagateSatellite(tle, date) {
-      const satrec = satellite.twoline2satrec(tle[0], tle[1]);
-      const positions = [];
-      for (let i = 0; i < 1440; i += 10) {
-        const time = new Date(date.getTime() + i * 60000);
-        const posVel = satellite.propagate(satrec, time);
-        if (!posVel.position) continue;
-        const gmst = satellite.gstime(time);
-        const geo = satellite.eciToGeodetic(posVel.position, gmst);
-        const lat = Cesium.Math.toDegrees(geo.latitude);
-        const lon = Cesium.Math.toDegrees(geo.longitude);
-        const height = geo.height * 1000;
-        positions.push(Cesium.Cartesian3.fromDegrees(lon, lat, height));
-      }
-      return positions;
+  const tleData = {
+    "THEOS": [
+      "1 33396U 08049A   25083.87213906  .00000283  00000+0  15311-3 0  9995",
+      "2 33396  98.6176 149.1908 0001332  96.9286 263.2042 14.20082670854190"
+    ],
+    "THEOS-2": [
+      "1 58016U 23155A   25083.88629186  .00003640  00000+0  46978-3 0  9991",
+      "2 58016  97.9047 156.2251 0001223  90.4571 269.6781 14.81595690 78893"
+    ]
+  };
+
+  function propagateTrack(tle, date) {
+    const satrec = satellite.twoline2satrec(tle[0], tle[1]);
+    const latlngs = [];
+
+    for (let i = 0; i < 1440; i += 10) {
+      const time = new Date(date.getTime() + i * 60000);
+      const positionAndVelocity = satellite.propagate(satrec, time);
+      if (!positionAndVelocity.position) continue;
+
+      const gmst = satellite.gstime(time);
+      const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+      const lat = satellite.degreesLat(positionGd.latitude);
+      const lon = satellite.degreesLong(positionGd.longitude);
+      latlngs.push([lat, lon]);
     }
 
-    function plotSatellites(date) {
-      viewer.entities.removeAll();
-      for (const [name, tle] of Object.entries(tleData)) {
-        const track = propagateSatellite(tle, date);
-        viewer.entities.add({
-          name,
-          polyline: {
-            positions: track,
-            width: 2,
-            material: Cesium.Color.YELLOW,
-          },
-          label: {
-            text: name,
-            font: "14px sans-serif",
-            fillColor: Cesium.Color.WHITE,
-          }
-        });
-      }
+    return latlngs;
+  }
+
+  let tracks = [];
+
+  function plot(date) {
+    tracks.forEach(layer => map.removeLayer(layer));
+    tracks = [];
+
+    for (const [name, tle] of Object.entries(tleData)) {
+      const latlngs = propagateTrack(tle, date);
+      const polyline = L.polyline(latlngs, { color: 'yellow' }).addTo(map);
+      const marker = L.marker(latlngs[0]).addTo(map).bindPopup(name);
+      tracks.push(polyline, marker);
     }
+  }
 
-    const picker = document.getElementById("datePicker");
-    picker.valueAsDate = new Date();
-    picker.addEventListener("change", () => {
-      plotSatellites(new Date(picker.value));
-    });
+  const picker = document.getElementById('datePicker');
+  picker.valueAsDate = new Date();
+  picker.addEventListener('change', () => {
+    plot(new Date(picker.value));
+  });
 
-    plotSatellites(new Date());
-  </script>
+  plot(new Date());
+</script>
 </body>
 </html>
