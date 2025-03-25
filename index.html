@@ -121,14 +121,22 @@ function getMinutes(t) {
   return h * 60 + m;
 }
 
+
+const tleEpoch = new Date("2025-03-23"); // วันที่อ้างอิงของ TLE
 function drawOrbits() {
+
   viewer.entities.removeAll();
 
   const show1 = document.getElementById("showTheos1").checked;
   const show2 = document.getElementById("showTheos2").checked;
   const start = getMinutes(document.getElementById("startTime").value);
   const end = getMinutes(document.getElementById("endTime").value);
-  const date = new Date(document.getElementById("datePicker").value);
+  
+    const inputDate = new Date(document.getElementById("datePicker").value);
+    const diffDays = Math.round((inputDate - tleEpoch) / (1000 * 60 * 60 * 24));
+    const phaseShiftMs = (diffDays % 26) * 24 * 60 * 60 * 1000;
+    const date = new Date(tleEpoch.getTime() + phaseShiftMs);
+
 
   const tle = {
     "THEOS": [
