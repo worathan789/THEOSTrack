@@ -16,6 +16,12 @@
       overflow: hidden;
     }
     .toolbar {
+  left: 15px;
+  top: 15px;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
       position: absolute;
       top: 10px;
       left: 10px;
@@ -34,8 +40,8 @@
   <div id="cesiumContainer"></div>
 <div class="cesium-viewer-toolbar">
   <label>เลือกวันที่: <input type="date" id="datePicker" /></label><br/>
-  <label><input type="checkbox" id="showTheos1" checked /> แสดง THEOS</label><br/>
-  <label><input type="checkbox" id="showTheos2" checked /> แสดง THEOS-2</label><br/>
+  <label><input type="checkbox" id="showTheos1" checked /> แสดง THEOS แสดง THEOS</label><br/>
+  <label><input type="checkbox" id="showTheos2" checked /> แสดง THEOS-2 แสดง THEOS-2</label><br/>
   <label>เวลาเริ่มต้น: <input type="time" id="startTime" value="00:00" /></label><br/>
   <label>เวลาสิ้นสุด: <input type="time" id="endTime" value="23:59" /></label><br/>
 </div>
