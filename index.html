@@ -4,6 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <title>THEOS Tracker</title>
+    <script>
+        // ใส่ token ทันทีที่โหลด
+        Cesium = window.Cesium || {};
+        Cesium.Ion = Cesium.Ion || {};
+        Cesium.Ion.defaultAccessToken = "1b7a70db0c8e4df4a6b4b6ef9ff1e9d1";
+    </script>
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.109/Build/Cesium/Cesium.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.109/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <script src="https://unpkg.com/satellite.js@5.0.1/dist/satellite.min.js"></script>
