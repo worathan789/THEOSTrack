@@ -30,8 +30,10 @@
 </div>
 <script src="https://unpkg.com/satellite.js@5.0.1/dist/satellite.min.js"></script>
 <script>
+Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4ZGZmNWNjNi01ODEwLTQyMjUtYjFmZS01MzFmNDNiZmU1OGQiLCJpZCI6Mjg3NzA4LCJpYXQiOjE3NDI5NTM0NjN9.b6Jc-Vbz0OAm2BuCVMqglrksA7x9Z3a8gOdTtR1OoBg';
+
 const viewer = new Cesium.Viewer("cesiumContainer", {
-  imageryProvider: new Cesium.OpenStreetMapImageryProvider(),
+  imageryProvider: new Cesium.IonImageryProvider({ assetId: 2 }),
   baseLayerPicker: false
 });
 
@@ -60,7 +62,10 @@ function drawOrbits() {
     for (let i = 0; i <= 90; i += 1) {
       const time = new Date(baseDate.getTime() + i * 60 * 1000);
       const posVel = satellite.propagate(satrec, time);
-      if (!posVel.position) continue;
+      if (!posVel.position) {
+        console.log("ตำแหน่งไม่มี:", time.toISOString());
+        continue;
+      }
       const gmst = satellite.gstime(time);
       const geo = satellite.eciToGeodetic(posVel.position, gmst);
       const lat = Cesium.Math.toDegrees(geo.latitude);
