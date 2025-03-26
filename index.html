@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>THEOS Tracker</title>
-  <script src="satellite.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/satellite.js@4.0.0/dist/satellite.min.js"></script>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.109/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.109/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
   <style>
@@ -28,6 +27,14 @@
       flex-direction: column;
       gap: 5px;
     }
+    label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    input[type="date"], input[type="time"] {
+      width: 120px;
+    }
   </style>
 </head>
 <body>
@@ -41,15 +48,19 @@
   </div>
 
   <script>
+    // ตั้งค่า Cesium Viewer
     Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4ZGZmNWNjNi01ODEwLTQyMjUtYjFmZS01MzFmNDNiZmU1OGQiLCJpZCI6Mjg3NzA4LCJpYXQiOjE3NDI5NTM0NjN9.b6Jc-Vbz0OAm2BuCVMqglrksA7x9Z3a8gOdTtR1OoBg";
     const viewer = new Cesium.Viewer("cesiumContainer", {
-      imageryProvider: new Cesium.OpenStreetMapImageryProvider(),
+      imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+      }),
       baseLayerPicker: false,
       timeline: false,
       animation: false,
       shouldAnimate: true
     });
 
+    // ข้อมูล TLE ของดาวเทียม
     const tleEpoch = new Date("2025-03-23");
     const tle = {
       "THEOS": [
@@ -62,42 +73,92 @@
       ]
     };
 
+    // แปลงเวลาเป็นนาที
     function getMinutes(t) {
       const [h, m] = t.split(":").map(Number);
       return h * 60 + m;
     }
 
+    // ฟังก์ชันวาดวงโคจร
     function drawOrbits() {
       viewer.entities.removeAll();
+      
       const show1 = document.getElementById("showTheos1").checked;
       const show2 = document.getElementById("showTheos2").checked;
       const start = getMinutes(document.getElementById("startTime").value);
       const end = getMinutes(document.getElementById("endTime").value);
       const inputDate = new Date(document.getElementById("datePicker").value);
       
-    const diffDays = Math.round((inputDate - tleEpoch) / (1000 * 60 * 60 * 24));
-    const phaseOffset = ((diffDays % 26) + 26) % 26;
-    
+      // คำนวณวันที่ซ้ำวงโคจร (THEOS มีคาบการโคจรประมาณ 26 วัน)
+      const diffDays = Math.round((inputDate - tleEpoch) / (1000 * 60 * 60 * 24));
+      const phaseOffset = ((diffDays % 26) + 26) % 26;
       const phaseShiftMs = phaseOffset * 24 * 60 * 60 * 1000;
       const date = new Date(tleEpoch.getTime() + phaseShiftMs);
 
+      // ฟังก์ชันคำนวณและแสดงวงโคจร
       function plot(tleLines, color, label) {
         const satrec = satellite.twoline2satrec(tleLines[0], tleLines[1]);
         const positions = [];
+        
         for (let i = start; i <= end; i += 2) {
           const time = new Date(date.getTime() + i * 60000);
           const posVel = satellite.propagate(satrec, time);
-          if (!posVel.position) continue;
+          
+          if (!posVel.position) {
+            console.warn("No position data for", label, "at minute", i);
+            continue;
+          }
+          
           const gmst = satellite.gstime(time);
           const geo = satellite.eciToGeodetic(posVel.position, gmst);
+          
+          // ตรวจสอบค่าที่คำนวณได้
+          if (isNaN(geo.latitude) || isNaN(geo.longitude)) {
+            console.warn("Invalid position for", label, "at minute", i);
+            continue;
+          }
+          
           const lat = Cesium.Math.toDegrees(geo.latitude);
           const lon = Cesium.Math.toDegrees(geo.longitude);
           const alt = geo.height * 1000;
           positions.push(Cesium.Cartesian3.fromDegrees(lon, lat, alt));
         }
+        
         if (positions.length >= 2) {
-          viewer.entities.add({ polyline: { positions, width: 2, material: color } });
-          viewer.entities.add({ position: positions[0], point: { pixelSize: 10, color }, label: { text: label, font: "14px sans-serif", fillColor: color } });
+          viewer.entities.add({ 
+            name: label,
+            polyline: { 
+              positions: positions, 
+              width: 3, 
+              material: new Cesium.PolylineGlowMaterialProperty({
+                glowPower: 0.2,
+                color: color.withAlpha(0.8)
+              })
+            } 
+          });
+          
+          viewer.entities.add({ 
+            position: positions[0], 
+            point: { 
+              pixelSize: 10, 
+              color: color,
+              outlineColor: Cesium.Color.WHITE,
+              outlineWidth: 1
+            }, 
+            label: { 
+              text: label, 
+              font: "14px sans-serif", 
+              fillColor: color,
+              outlineColor: Cesium.Color.BLACK,
+              outlineWidth: 1,
+              style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+              pixelOffset: new Cesium.Cartesian2(0, -10)
+            } 
+          });
+          
+          console.log(`Successfully plotted ${positions.length} positions for ${label}`);
+        } else {
+          console.warn(`Not enough positions (${positions.length}) to plot orbit for ${label}`);
         }
       }
 
@@ -105,10 +166,15 @@
       if (show2) plot(tle["THEOS-2"], Cesium.Color.RED, "THEOS-2");
     }
 
+    // ตั้งค่าเริ่มต้น
     document.getElementById("datePicker").valueAsDate = new Date();
+    
+    // ตั้งค่า Event Listeners
     ["showTheos1", "showTheos2", "startTime", "endTime", "datePicker"].forEach(id => {
       document.getElementById(id).addEventListener("change", drawOrbits);
     });
+    
+    // วาดวงโคจรครั้งแรก
     drawOrbits();
   </script>
 </body>
