@@ -1,5 +1,5 @@
 
-Cesium.Ion.defaultAccessToken = "1b7a70db0c8e4df4a6b4b6ef9ff1e9d1";
+Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4ZGZmNWNjNi01ODEwLTQyMjUtYjFmZS01MzFmNDNiZmU1OGQiLCJpZCI6Mjg3NzA4LCJpYXQiOjE3NDI5NTM0NjN9.b6Jc-Vbz0OAm2BuCVMqglrksA7x9Z3a8gOdTtR1OoBg";
 
 const viewer = new Cesium.Viewer("cesiumContainer", {
   shouldAnimate: true,
