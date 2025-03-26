@@ -2,97 +2,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>THEOS Tracker - Leaflet</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <meta charset="UTF-8" />
+  <title>THEOS Tracker</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.109/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.109/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
   <style>
-    html, body, #map { height: 100%; margin: 0; padding: 0; }
-    .controls {
+    html, body, #cesiumContainer {
+      width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+    }
+    .toolbar {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 1000;
+      top: 10px; left: 10px;
+      z-index: 10;
       background: white;
       padding: 10px;
-      border-radius: 5px;
+      border-radius: 8px;
       font-family: sans-serif;
     }
   </style>
 </head>
 <body>
-  <div class="controls">
-    <label>เลือกวันที่:
-      <input type="date" id="datePicker">
-    </label><br>
-    <label><input type="checkbox" id="theos1" checked> แสดง THEOS</label><br>
-    <label><input type="checkbox" id="theos2" checked> แสดง THEOS-2</label>
-  </div>
-  <div id="map"></div>
+<div id="cesiumContainer"></div>
+<div class="toolbar">
+  <label>เลือกวันที่: <input type="date" id="datePicker" /></label><br>
+  <label><input type="checkbox" id="showTheos1" checked /> THEOS-1</label><br>
+  <label><input type="checkbox" id="showTheos2" checked /> THEOS-2</label>
+</div>
+<script src="https://unpkg.com/satellite.js@5.0.1/dist/satellite.min.js"></script>
+<script>
+const viewer = new Cesium.Viewer("cesiumContainer", {
+  imageryProvider: new Cesium.OpenStreetMapImageryProvider(),
+  baseLayerPicker: false
+});
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/satellite.js@5.0.1/dist/satellite.min.js"></script>
-  <script>
-    const tleData = {
-      "THEOS": [
-        "1 33396U 08049A   25083.87213906  .00000283  00000+0  15311-3 0  9995",
-        "2 33396  98.6176 149.1908 0001332  96.9286 263.2042 14.20082670854190"
-      ],
-      "THEOS-2": [
-        "1 58016U 23155A   25083.88629186  .00003640  00000+0  46978-3 0  9991",
-        "2 58016  97.9047 156.2251 0001223  90.4571 269.6781 14.81595690 78893"
-      ]
-    };
+const tleEpoch = new Date("2025-03-23");
+const tle = {
+  "THEOS-1": [
+    "1 33396U 08049A   25083.87213906  .00000283  00000+0  15311-3 0  9995",
+    "2 33396  98.6176 149.1908 0001332  96.9286 263.2042 14.20082670854190"
+  ],
+  "THEOS-2": [
+    "1 58016U 23155A   25083.88629186  .00003640  00000+0  46978-3 0  9991",
+    "2 58016  97.9047 156.2251 0001223  90.4571 269.6781 14.81595690 78893"
+  ]
+};
 
-    const tleEpoch = new Date("2025-03-23");
-    const map = L.map("map").setView([0, 100], 3);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors"
-    }).addTo(map);
+function drawOrbits() {
+  viewer.entities.removeAll();
+  const selectedDate = new Date(document.getElementById("datePicker").value);
+  const diffDays = Math.round((selectedDate - tleEpoch) / (1000 * 60 * 60 * 24));
+  const phase = ((diffDays % 26) + 26) % 26;
+  const baseDate = new Date(tleEpoch.getTime() + phase * 24 * 60 * 60 * 1000);
 
-    const orbits = {
-      "THEOS": null,
-      "THEOS-2": null
-    };
-
-    function computeOrbit(tleLines, color, date) {
-      const satrec = satellite.twoline2satrec(tleLines[0], tleLines[1]);
-      const positions = [];
-      for (let i = 0; i < 90; i += 2) {
-        const time = new Date(date.getTime() + i * 60 * 1000);
-        const posVel = satellite.propagate(satrec, time);
-        if (!posVel.position) continue;
-        const gmst = satellite.gstime(time);
-        const geo = satellite.eciToGeodetic(posVel.position, gmst);
-        const lat = satellite.degreesLat(geo.latitude);
-        const lon = satellite.degreesLong(geo.longitude);
-        positions.push([lat, lon]);
-      }
-      return L.polyline(positions, { color }).addTo(map);
+  function plotSatellite(tleLines, color) {
+    const satrec = satellite.twoline2satrec(tleLines[0], tleLines[1]);
+    const positions = [];
+    for (let i = 0; i <= 90; i += 1) {
+      const time = new Date(baseDate.getTime() + i * 60 * 1000);
+      const posVel = satellite.propagate(satrec, time);
+      if (!posVel.position) continue;
+      const gmst = satellite.gstime(time);
+      const geo = satellite.eciToGeodetic(posVel.position, gmst);
+      const lat = Cesium.Math.toDegrees(geo.latitude);
+      const lon = Cesium.Math.toDegrees(geo.longitude);
+      const alt = geo.height * 1000;
+      positions.push(Cesium.Cartesian3.fromDegrees(lon, lat, alt));
     }
-
-    function updateOrbits() {
-      const selectedDate = new Date(document.getElementById("datePicker").value);
-      const diffDays = Math.round((selectedDate - tleEpoch) / (1000 * 60 * 60 * 24));
-      const phase = ((diffDays % 26) + 26) % 26;
-      const orbitDate = new Date(tleEpoch.getTime() + phase * 24 * 60 * 60 * 1000);
-
-      if (orbits["THEOS"]) map.removeLayer(orbits["THEOS"]);
-      if (orbits["THEOS-2"]) map.removeLayer(orbits["THEOS-2"]);
-
-      if (document.getElementById("theos1").checked) {
-        orbits["THEOS"] = computeOrbit(tleData["THEOS"], "gold", orbitDate);
-      }
-      if (document.getElementById("theos2").checked) {
-        orbits["THEOS-2"] = computeOrbit(tleData["THEOS-2"], "red", orbitDate);
-      }
+    if (positions.length >= 2) {
+      viewer.entities.add({
+        polyline: {
+          positions,
+          width: 2,
+          material: color
+        }
+      });
     }
+  }
 
-    document.getElementById("datePicker").valueAsDate = new Date();
-    ["datePicker", "theos1", "theos2"].forEach(id => {
-      document.getElementById(id).addEventListener("change", updateOrbits);
-    });
+  if (document.getElementById("showTheos1").checked) {
+    plotSatellite(tle["THEOS-1"], Cesium.Color.BLUE);
+  }
+  if (document.getElementById("showTheos2").checked) {
+    plotSatellite(tle["THEOS-2"], Cesium.Color.CYAN);
+  }
+}
 
-    updateOrbits();
-  </script>
+document.getElementById("datePicker").valueAsDate = new Date();
+["datePicker", "showTheos1", "showTheos2"].forEach(id => {
+  document.getElementById(id).addEventListener("change", drawOrbits);
+});
+drawOrbits();
+</script>
 </body>
 </html>
