@@ -1,4 +1,3 @@
-
 // ตั้งค่า TLE เริ่มต้นของ THEOS-1 และ THEOS-2
 const tleData = {
     "THEOS-1": [
@@ -16,23 +15,23 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
     animation: true
 });
 
-function calculateTLEByDate(baseTLE, selectedDate, baseDateStr, periodDays = 26) {
-    const baseDate = Cesium.JulianDate.fromDate(new Date(baseDateStr));
-    const selDate = Cesium.JulianDate.fromDate(new Date(selectedDate));
-    const diff = Cesium.JulianDate.daysDifference(selDate, baseDate);
-    const cycles = Math.floor(diff / periodDays);
-    const newEpoch = 25085.91236103 + cycles * 26; // เพิ่มรอบทุก 26 วัน
-    const line1 = baseTLE[0].replace(/\d{5}\.\d{8}/, newEpoch.toFixed(8));
-    return [line1, baseTLE[1]];
+function getOffsetDate(selectedDateStr) {
+    const baseDate = new Date("2025-03-25");
+    const selectedDate = new Date(selectedDateStr);
+    const diffTime = selectedDate.getTime() - baseDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
+    const offsetDays = diffDays % 26;
+    const offsetDate = new Date(baseDate.getTime() + offsetDays * 24 * 60 * 60 * 1000);
+    return offsetDate;
 }
 
-function addSatellite(name, tle, color) {
+function addSatellite(name, tle, date, color) {
     const satrec = satellite.twoline2satrec(tle[0], tle[1]);
     const positions = [];
-    const start = Cesium.JulianDate.fromDate(new Date(viewer.clock.startTime.toString()));
+    const start = Cesium.JulianDate.fromDate(date);
     for (let i = 0; i <= 1440; i += 10) {
-        const time = new Date(Cesium.JulianDate.toDate(start).getTime() + i * 60000);
-        const gmst = satellite.gstime(new Date(time));
+        const time = new Date(date.getTime() + i * 60000);
+        const gmst = satellite.gstime(time);
         const positionAndVelocity = satellite.propagate(satrec, time);
         if (positionAndVelocity.position) {
             const positionEci = positionAndVelocity.position;
@@ -67,13 +66,12 @@ function addSatellite(name, tle, color) {
 function loadSatellites() {
     viewer.entities.removeAll();
     const dateStr = document.getElementById("datePicker").value;
+    const offsetDate = getOffsetDate(dateStr);
     if (document.getElementById("theos1").checked) {
-        const tle = calculateTLEByDate(tleData["THEOS-1"], dateStr, "2025-03-25");
-        addSatellite("THEOS-1", tle, Cesium.Color.SKYBLUE);
+        addSatellite("THEOS-1", tleData["THEOS-1"], offsetDate, Cesium.Color.SKYBLUE);
     }
     if (document.getElementById("theos2").checked) {
-        const tle = calculateTLEByDate(tleData["THEOS-2"], dateStr, "2025-03-25");
-        addSatellite("THEOS-2", tle, Cesium.Color.CYAN);
+        addSatellite("THEOS-2", tleData["THEOS-2"], offsetDate, Cesium.Color.CYAN);
     }
 }
 
