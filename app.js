@@ -59,7 +59,7 @@ function loadSatellites() {
     const dateStr = document.getElementById("datePicker").value;
     const selectedDate = new Date(dateStr);
     if (document.getElementById("theos1").checked) {
-        addSatellite("THEOS-1", tleData["THEOS-1"], selectedDate, Cesium.Color.SKYBLUE);
+        addSatellite("THEOS-1", tleData["THEOS-1"], selectedDate, Cesium.Color.RED);
     }
     if (document.getElementById("theos2").checked) {
         addSatellite("THEOS-2", tleData["THEOS-2"], selectedDate, Cesium.Color.CYAN);
