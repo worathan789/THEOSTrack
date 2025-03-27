@@ -16,14 +16,19 @@
             padding: 10px;
             border-radius: 6px;
             z-index: 1;
+            font-family: sans-serif;
+            font-size: 14px;
+        }
+        #controls input[type="checkbox"] {
+            margin-top: 4px;
         }
     </style>
 </head>
 <body>
     <div id="cesiumContainer"></div>
     <div id="controls">
-        <label for="datePicker">เลือกวันที่: </label>
-        <input type="date" id="datePicker"><br>
+        <label for="datePicker">เลือกวันที่:</label><br>
+        <input type="date" id="datePicker"><br><br>
         <input type="checkbox" id="theos1" checked> THEOS-1<br>
         <input type="checkbox" id="theos2" checked> THEOS-2<br>
         <input type="checkbox" id="showGroundTrack" checked> แสดง Ground Track
