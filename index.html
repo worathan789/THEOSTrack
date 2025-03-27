@@ -1,27 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>THEOS Tracker</title>
-  <script src="libs/satellite.min.js"></script>
-  <script src="https://cesium.com/downloads/cesiumjs/releases/1.100/Build/Cesium/Cesium.js"></script>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.100/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
-  <style>
-    html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
-    #controls { position: absolute; top: 10px; left: 10px; background: white; padding: 10px; border-radius: 6px; z-index: 1; }
-  </style>
+    <meta charset="UTF-8">
+    <title>THEOS Tracker</title>
+    <script src="https://unpkg.com/satellite.js/dist/satellite.min.js"></script>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.100/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.100/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            z-index: 1;
+        }
+    </style>
 </head>
 <body>
-  <div id="cesiumContainer"></div>
-  <div id="controls">
-    <label for="datePicker">เลือกวันที่: </label>
-    <input type="date" id="datePicker"><br>
-    <input type="checkbox" id="theos1" checked> THEOS-1<br>
-    <input type="checkbox" id="theos2" checked> THEOS-2
-  </div>
-  <script>
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4ZGZmNWNjNi01ODEwLTQyMjUtYjFmZS01MzFmNDNiZmU1OGQiLCJpZCI6Mjg3NzA4LCJpYXQiOjE3NDI5NTM0NjN9.b6Jc-Vbz0OAm2BuCVMqglrksA7x9Z3a8gOdTtR1OoBg'; // Replace with your token
-  </script>
-  <script src="app.js"></script>
+    <div id="cesiumContainer"></div>
+    <div id="controls">
+        <label for="datePicker">เลือกวันที่: </label>
+        <input type="date" id="datePicker"><br>
+        <input type="checkbox" id="theos1" checked> THEOS-1<br>
+        <input type="checkbox" id="theos2" checked> THEOS-2
+    </div>
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4ZGZmNWNjNi01ODEwLTQyMjUtYjFmZS01MzFmNDNiZmU1OGQiLCJpZCI6Mjg3NzA4LCJpYXQiOjE3NDI5NTM0NjN9.b6Jc-Vbz0OAm2BuCVMqglrksA7x9Z3a8gOdTtR1OoBg';
+    </script>
+    <script src="app.js"></script>
 </body>
 </html>
