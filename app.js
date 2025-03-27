@@ -1,3 +1,4 @@
+
 // ตั้งค่า TLE เริ่มต้นของ THEOS-1 และ THEOS-2
 const tleData = {
     "THEOS-1": [
@@ -14,16 +15,6 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
     timeline: true,
     animation: true
 });
-
-function getOffsetDate(selectedDateStr) {
-    const baseDate = new Date("2025-03-25");
-    const selectedDate = new Date(selectedDateStr);
-    const diffTime = selectedDate.getTime() - baseDate.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
-    const offsetDays = diffDays % 26;
-    const offsetDate = new Date(baseDate.getTime() + offsetDays * 24 * 60 * 60 * 1000);
-    return offsetDate;
-}
 
 function addSatellite(name, tle, date, color) {
     const satrec = satellite.twoline2satrec(tle[0], tle[1]);
@@ -66,12 +57,12 @@ function addSatellite(name, tle, date, color) {
 function loadSatellites() {
     viewer.entities.removeAll();
     const dateStr = document.getElementById("datePicker").value;
-    const offsetDate = getOffsetDate(dateStr);
+    const selectedDate = new Date(dateStr);
     if (document.getElementById("theos1").checked) {
-        addSatellite("THEOS-1", tleData["THEOS-1"], offsetDate, Cesium.Color.SKYBLUE);
+        addSatellite("THEOS-1", tleData["THEOS-1"], selectedDate, Cesium.Color.SKYBLUE);
     }
     if (document.getElementById("theos2").checked) {
-        addSatellite("THEOS-2", tleData["THEOS-2"], offsetDate, Cesium.Color.CYAN);
+        addSatellite("THEOS-2", tleData["THEOS-2"], selectedDate, Cesium.Color.CYAN);
     }
 }
 
