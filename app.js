@@ -1,4 +1,5 @@
 
+// ตั้งค่า TLE เริ่มต้นของ THEOS-1 และ THEOS-2
 const tleData = {
     "THEOS-1": [
         "1 33396U 08049A   25085.91542712  .00000292  00000+0  15710-3 0  9995",
@@ -18,21 +19,21 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
 function addSatellite(name, tle, date, color) {
     const satrec = satellite.twoline2satrec(tle[0], tle[1]);
     const positions = [];
-    const groundTrack = [];
+    const start = Cesium.JulianDate.fromDate(date);
     for (let i = 0; i <= 1440; i += 10) {
         const time = new Date(date.getTime() + i * 60000);
         const gmst = satellite.gstime(time);
-        const pos = satellite.propagate(satrec, time);
-        if (pos.position) {
-            const gd = satellite.eciToGeodetic(pos.position, gmst);
-            const lon = Cesium.Math.toDegrees(gd.longitude);
-            const lat = Cesium.Math.toDegrees(gd.latitude);
-            const alt = gd.height * 1000;
-            positions.push(Cesium.Cartesian3.fromDegrees(lon, lat, alt));
-            groundTrack.push(Cesium.Cartesian3.fromDegrees(lon, lat, 0));
+        const positionAndVelocity = satellite.propagate(satrec, time);
+        if (positionAndVelocity.position) {
+            const positionEci = positionAndVelocity.position;
+            const positionGd = satellite.eciToGeodetic(positionEci, gmst);
+            const longitude = Cesium.Math.toDegrees(positionGd.longitude);
+            const latitude = Cesium.Math.toDegrees(positionGd.latitude);
+            const height = positionGd.height * 1000;
+            const cartesian = Cesium.Cartesian3.fromDegrees(longitude, latitude, height);
+            positions.push(cartesian);
         }
     }
-
     viewer.entities.add({
         name: name,
         polyline: {
@@ -51,17 +52,6 @@ function addSatellite(name, tle, date, color) {
         },
         position: positions[positions.length - 1]
     });
-
-    if (document.getElementById("showGroundTrack")?.checked) {
-        viewer.entities.add({
-            name: name + " Ground Track",
-            polyline: {
-                positions: groundTrack,
-                width: 1.5,
-                material: color.withAlpha(0.5)
-            }
-        });
-    }
 }
 
 function loadSatellites() {
@@ -80,7 +70,6 @@ document.getElementById("datePicker").valueAsDate = new Date();
 document.getElementById("datePicker").addEventListener("change", loadSatellites);
 document.getElementById("theos1").addEventListener("change", loadSatellites);
 document.getElementById("theos2").addEventListener("change", loadSatellites);
-document.getElementById("showGroundTrack")?.addEventListener("change", loadSatellites);
 
 viewer.clock.startTime = Cesium.JulianDate.fromDate(new Date());
 viewer.clock.currentTime = viewer.clock.startTime;
